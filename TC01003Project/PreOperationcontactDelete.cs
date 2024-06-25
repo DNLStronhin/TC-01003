@@ -70,19 +70,17 @@ namespace TC_01003.TC01003Project
                     var emailAddress = preImageContact.GetAttributeValue<string>("emailaddress1");
                     var fullName = preImageContact.GetAttributeValue<string>("fullname");
                     var contactParams = context.InputParameters["Target"] as EntityReference;
-                    Entity email = new Entity("email");
-                    email["subject"] = $"Contact {fullName} was deleted {DateTime.Now}";
-                    email["description"] = $"Contact was deleted!";
+                    var testCustomAction = new OrganizationRequest()
+                    {
+                        RequestName = "new_SendCustomEmailAction"
+                    };
+                    testCustomAction.Parameters.Add("Sender",
+                        new EntityReference("systemuser", context.UserId));
+                    testCustomAction.Parameters.Add("Subject", $"Contact {fullName} was deleted {DateTime.Now}");
+                    testCustomAction.Parameters.Add("Body", $"Contact was deleted!");
+                    testCustomAction.Parameters.Add("RecepientEmail", emailAddress);
 
-                    Entity fromParty = new Entity("activityparty");
-                    fromParty["partyid"] = new EntityReference("systemuser", context.UserId);
-                    EntityCollection from = new EntityCollection(new List<Entity>() { fromParty });
-                    email["from"] = from;
-                    Entity toParty = new Entity("activityparty");
-                    toParty["addressused"] = emailAddress;
-                    EntityCollection to = new EntityCollection(new List<Entity>() { toParty });
-                    email["to"] = to;
-                    var emailId = currentUserService.Create(email);
+                    var response = currentUserService.Execute(testCustomAction);
                 }
             }	
             // Only throw an InvalidPluginExecutionException. Please Refer https://go.microsoft.com/fwlink/?linkid=2153829.

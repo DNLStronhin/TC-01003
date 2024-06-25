@@ -65,20 +65,20 @@ namespace TC_01003.TC01003Project
                 if (context.InputParameters.Contains("Target") &&
                     context.InputParameters["Target"] is Entity)
                 {
-                    var contactParams = context.InputParameters["Target"] as Entity;
-                    Entity email = new Entity("email");
-                    email["subject"] = $"New Contact {contactParams["fullname"]} created {contactParams["createdon"]}";
-                    email["description"] = $"New contact created - https://orgd517a8d5.crm11.dynamics.com/main.aspx?appid=cf5b42fc-d128-ef11-840a-002248c82767&pagetype=entityrecord&etn=contact&id={contactParams["contactid"].ToString()}";
+                    var contact = context.InputParameters["Target"] as Entity;
+                    var testCustomAction = new OrganizationRequest()
+                    {
+                        RequestName = "new_SendCustomEmailAction"
+                    };
+                    testCustomAction.Parameters.Add("RegardingContact",
+                        contact.ToEntityReference());
+                    testCustomAction.Parameters.Add("Sender",
+                        new EntityReference("systemuser", context.UserId));
+                    testCustomAction.Parameters.Add("Subject", $"New Contact {contact["fullname"]} created {contact["createdon"]}");
+                    testCustomAction.Parameters.Add("Body", $"New contact created - https://orgd517a8d5.crm11.dynamics.com/main.aspx?appid=cf5b42fc-d128-ef11-840a-002248c82767&pagetype=entityrecord&etn=contact&id={contact["contactid"].ToString()}");
+                    testCustomAction.Parameters.Add("RecepientEmail", contact["emailaddress1"]);
 
-                    Entity fromParty = new Entity("activityparty");
-                    fromParty["partyid"] = new EntityReference("systemuser", context.UserId);
-                    EntityCollection from = new EntityCollection(new List<Entity>() { fromParty });
-                    email["from"] = from;
-                    Entity toParty = new Entity("activityparty");
-                    toParty["partyid"] = new EntityReference("contact", Guid.Parse(contactParams["contactid"].ToString()));
-                    EntityCollection to = new EntityCollection(new List<Entity>() { toParty });
-                    email["to"] = to;
-                    var d = currentUserService.Create(email);
+                    var response = currentUserService.Execute(testCustomAction);
                 }
             }
             // Only throw an InvalidPluginExecutionException. Please Refer https://go.microsoft.com/fwlink/?linkid=2153829.
